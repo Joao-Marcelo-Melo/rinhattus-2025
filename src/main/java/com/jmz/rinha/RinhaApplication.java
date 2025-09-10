@@ -9,5 +9,4 @@ public class RinhaApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(RinhaApplication.class, args);
 	}
-
 }
