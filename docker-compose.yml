@@ -1,55 +1,29 @@
 version: "3.9"
 
 services:
-  redis:
-    image: redis:7-alpine
-    command: [
-      "redis-server",
-      "--save", "",
-      "--appendonly", "no",
-      "--maxmemory", "128mb",
-      "--maxmemory-policy", "allkeys-lru",
-      "--hz", "10",
-      "--protected-mode", "no",
-      "--tcp-backlog", "512",
-      "--tcp-keepalive", "60",
-      "--io-threads", "2"
-    ]
-    deploy:
-      resources:
-        limits:
-          cpus: "0.30"
-          memory: "100M"
-    networks:
-      - rinhattus-net
-
   api1:
     image: jmz25/rinhattus-api:latest
     container_name: rinhattus-api1
-    depends_on:
-      - redis
     expose:
       - "8080"
     deploy:
       resources:
         limits:
-          cpus: "0.40"
-          memory: "90M"
+          cpus: "0.60"
+          memory: "140M"
     networks:
       - rinhattus-net
 
   api2:
     image: jmz25/rinhattus-api:latest
     container_name: rinhattus-api2
-    depends_on:
-      - redis
     expose:
       - "8080"
     deploy:
       resources:
         limits:
-          cpus: "0.40"
-          memory: "90M"
+          cpus: "0.60"
+          memory: "140M"
     networks:
       - rinhattus-net
 
@@ -66,8 +40,8 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.10"
-          memory: "30M"
+          cpus: "0.20"
+          memory: "70M"
     networks:
       - rinhattus-net
 
