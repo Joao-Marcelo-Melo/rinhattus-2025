@@ -1,0 +1,31 @@
+server:
+  port: 8080
+  netty:
+    connection-timeout: 1500ms
+    max-chunk-size: 4096
+  http2:
+    enabled: false
+  compression:
+    enabled: false
+
+spring:
+  application:
+    name: rinhattus
+  data:
+    redis:
+      host: redis
+      port: 6379
+      timeout: 500ms
+      lettuce:
+        pool:
+          max-active: 16
+          max-idle: 8
+          min-idle: 2
+          max-wait: 500ms
+
+logging:
+  level:
+    root: ERROR
+    com.rinha: WARN
+    org.springframework: ERROR
+    reactor.netty: ERROR

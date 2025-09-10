@@ -1,55 +1,44 @@
 package com.jmz.rinha.controller;
 
-import com.jmz.rinha.model.DividaRequest;
+import com.jmz.rinha.model.CreateDividaRequest;
+import com.jmz.rinha.model.DividasPeriodoResponse;
 import com.jmz.rinha.service.DividaService;
-import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import reactor.core.publisher.Mono;
 
-import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.HashMap;
-import java.util.Map;
+import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/dividas")
-@RequiredArgsConstructor
 public class DividaController {
 
     private final DividaService service;
 
-    @PostMapping
-    public ResponseEntity<Map<String, Object>> criar(@RequestBody DividaRequest req) {
-        if (req.identificador() == null || req.valor() == null || req.valor().compareTo(BigDecimal.ZERO) <= 0) {
-            return errorResponse();
-        }
-
-        try {
-            service.registrarDivida(req.identificador(), req.valor());
-
-            Map<String, Object> resp = new HashMap<>(2);
-            resp.put("status", 200);
-            resp.put("mensagem", "Dívida registrada com sucesso");
-            return ResponseEntity.ok(resp);
-
-        } catch (Exception e) {
-            return errorResponse();
-        }
+    public DividaController(DividaService service) {
+        this.service = service;
     }
 
-    @GetMapping
-    public ResponseEntity<Map<String, Object>> consultar(@RequestParam Instant from, @RequestParam Instant to) {
-        try {
-            return ResponseEntity.ok(service.consultar(from, to));
-        } catch (Exception e) {
-            return errorResponse();
-        }
+    @PostMapping(consumes = MediaType.APPLICATION_JSON_VALUE)
+    public Mono<ResponseEntity<String>> criar(@RequestBody CreateDividaRequest req) {
+        return service.save(req)
+                .thenReturn(ResponseEntity.ok("{\"status\":200,\"mensagem\":\"Dívida registrada com sucesso\"}"))
+                .onErrorReturn(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                        .body("{\"status\":500,\"mensagem\":\"Não foi possível realizar o recebimento da dívida\"}"));
     }
 
-    private ResponseEntity<Map<String, Object>> errorResponse() {
-        Map<String, Object> error = new HashMap<>(2);
-        error.put("status", 500);
-        error.put("mensagem", "Não foi possível realizar o recebimento da dívida");
-        return ResponseEntity.status(500).body(error);
+    @GetMapping(produces = MediaType.APPLICATION_JSON_VALUE)
+    public Mono<ResponseEntity<DividasPeriodoResponse>> consultar(
+            @RequestParam("from") String fromStr,
+            @RequestParam("to") String toStr) {
+        try {
+            LocalDateTime from = LocalDateTime.parse(fromStr.replace("Z", ""));
+            LocalDateTime to = LocalDateTime.parse(toStr.replace("Z", ""));
+            return service.findByPeriod(from, to).map(ResponseEntity::ok);
+        } catch (Exception e) {
+            return Mono.just(ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).build());
+        }
     }
 }

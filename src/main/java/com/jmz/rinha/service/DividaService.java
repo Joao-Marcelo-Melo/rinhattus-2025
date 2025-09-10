@@ -1,74 +1,107 @@
 package com.jmz.rinha.service;
 
-import io.lettuce.core.KeyValue;
-import io.lettuce.core.SetArgs;
-import io.lettuce.core.api.async.RedisAsyncCommands;
-import lombok.RequiredArgsConstructor;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.jmz.rinha.model.CreateDividaRequest;
+import com.jmz.rinha.model.Divida;
+import com.jmz.rinha.model.DividasPeriodoResponse;
+import org.springframework.data.redis.core.ReactiveRedisTemplate;
+import org.springframework.data.redis.core.script.RedisScript;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Mono;
 
 import java.math.BigDecimal;
-import java.time.Instant;
-import java.util.HashMap;
+import java.time.LocalDateTime;
+import java.time.ZoneOffset;
 import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.concurrent.CompletableFuture;
 
 @Service
-@RequiredArgsConstructor
 public class DividaService {
 
-    private final RedisAsyncCommands<String, String> redis;
+    private static final String TIMELINE_KEY = "timeline";
+    private static final String HASH_KEY = "dividas";
 
-    public void registrarDivida(UUID identificador, BigDecimal valor) {
-        long cents = valor.movePointRight(2).longValueExact();
-        long epochSecond = Instant.now().getEpochSecond();
+    private final ReactiveRedisTemplate<String, String> redis;
+    private final ObjectMapper mapper;
+    private final RedisScript<Long> saveScript;
+    private final RedisScript<List> aggregateScript;
 
-        // SET NX + incrementos no mesmo pipeline
-        redis.set("debt:" + identificador, "1", SetArgs.Builder.nx());
-        redis.incrby("sum:" + epochSecond, cents);
-        redis.incrby("count:" + epochSecond, 1);
-        redis.flushCommands(); // envia em batch
+    private static final String SAVE_LUA = """
+        local hashKey = KEYS[1]
+        local timelineKey = KEYS[2]
+        local id = ARGV[1]
+        local dividaJson = ARGV[2]
+        local ts = ARGV[3]
+        if redis.call('HEXISTS', hashKey, id) == 1 then
+          return 0
+        end
+        redis.call('HSET', hashKey, id, dividaJson)
+        redis.call('ZADD', timelineKey, ts, id)
+        return 1
+        """;
+
+    private static final String AGGREGATE_LUA = """
+        local timelineKey = KEYS[1]
+        local hashKey = KEYS[2]
+        local fromTs = ARGV[1]
+        local toTs = ARGV[2]
+        local ids = redis.call('ZRANGEBYSCORE', timelineKey, fromTs, '(' .. toTs)
+        if #ids == 0 then return {0,'0.00'} end
+        local valores = redis.call('HMGET', hashKey, unpack(ids))
+        local count, total = 0, 0.0
+        for i,v in ipairs(valores) do
+          if v then
+            local n = string.match(v, '"valor":([0-9%.]+)')
+            total = total + tonumber(n)
+            count = count + 1
+          end
+        end
+        return {count, string.format("%.2f", total)}
+        """;
+
+    public DividaService(ReactiveRedisTemplate<String, String> redis, ObjectMapper mapper) {
+        this.redis = redis;
+        this.mapper = mapper;
+        this.saveScript = RedisScript.of(SAVE_LUA, Long.class);
+        this.aggregateScript = RedisScript.of(AGGREGATE_LUA, List.class);
     }
 
-    public Map<String, Object> consultar(Instant from, Instant to) throws Exception {
-        String[] sumKeys = buildKeys("sum:", from, to);
-        String[] countKeys = buildKeys("count:", from, to);
+    public Mono<Void> save(CreateDividaRequest request) {
+        Divida divida = new Divida(request.identificador(), request.valor());
+        if (!divida.isValid()) return Mono.error(new IllegalArgumentException());
 
-        // Rodando em paralelo
-        var sumsFuture = redis.mget(sumKeys).toCompletableFuture();
-        var countsFuture = redis.mget(countKeys).toCompletableFuture();
-
-        CompletableFuture.allOf(sumsFuture, countsFuture).join();
-
-        List<KeyValue<String, String>> sums = sumsFuture.get();
-        List<KeyValue<String, String>> counts = countsFuture.get();
-
-        long totalCents = 0L;
-        long totalCount = 0L;
-
-        for (KeyValue<String, String> kv : sums) {
-            if (kv.hasValue()) totalCents += Long.parseLong(kv.getValue());
-        }
-        for (KeyValue<String, String> kv : counts) {
-            if (kv.hasValue()) totalCount += Long.parseLong(kv.getValue());
-        }
-
-        // Usando HashMap (menos overhead que Map.of)
-        Map<String, Object> result = new HashMap<>(2);
-        result.put("quantidadeTotal", totalCount);
-        result.put("valorTotal", BigDecimal.valueOf(totalCents, 2));
-        return result;
+        return Mono.fromCallable(() -> mapper.writeValueAsString(divida))
+                .flatMap(json -> redis.execute(
+                                        saveScript,
+                                        List.of(HASH_KEY, TIMELINE_KEY),
+                                        List.of(divida.identificador(), json, String.valueOf(divida.timestamp()))
+                                )
+                                .next()
+                )
+                .filter(result -> result != null && result > 0)
+                .switchIfEmpty(Mono.error(new IllegalStateException("Dívida já existe")))
+                .then();
     }
 
-    private String[] buildKeys(String prefix, Instant from, Instant to) {
-        long start = from.getEpochSecond();
-        long end = to.getEpochSecond();
-        int len = (int) (end - start);
-        String[] keys = new String[len];
-        for (int i = 0; i < len; i++) {
-            keys[i] = prefix + (start + i);
-        }
-        return keys;
+    public Mono<DividasPeriodoResponse> findByPeriod(LocalDateTime from, LocalDateTime to) {
+        long fromTs = from.toInstant(ZoneOffset.UTC).toEpochMilli();
+        long toTs = to.toInstant(ZoneOffset.UTC).toEpochMilli();
+
+        return redis.execute(
+                        aggregateScript,
+                        List.of(TIMELINE_KEY, HASH_KEY),
+                        String.valueOf(fromTs),
+                        String.valueOf(toTs)
+                )
+                .cast(List.class)
+                .next()
+                .map(res -> {
+                    if (res == null || res.isEmpty()) {
+                        return new DividasPeriodoResponse(0, BigDecimal.ZERO);
+                    }
+                    Integer count = Integer.valueOf(res.get(0).toString());
+                    BigDecimal total = new BigDecimal(res.get(1).toString());
+                    return new DividasPeriodoResponse(count, total);
+                });
     }
+
 }
