@@ -1,38 +1,74 @@
 package com.jmz.rinha.service;
 
-import com.jmz.rinha.model.Divida;
-import com.jmz.rinha.repository.DividaRepository;
-import org.springframework.transaction.annotation.Transactional;
+import io.lettuce.core.KeyValue;
+import io.lettuce.core.SetArgs;
+import io.lettuce.core.api.async.RedisAsyncCommands;
+import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 
 import java.math.BigDecimal;
 import java.time.Instant;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
 
 @Service
+@RequiredArgsConstructor
 public class DividaService {
 
-    private final DividaRepository repo;
+    private final RedisAsyncCommands<String, String> redis;
 
-    public DividaService(DividaRepository repo) {
-        this.repo = repo;
+    public void registrarDivida(UUID identificador, BigDecimal valor) {
+        long cents = valor.movePointRight(2).longValueExact();
+        long epochSecond = Instant.now().getEpochSecond();
+
+        // SET NX + incrementos no mesmo pipeline
+        redis.set("debt:" + identificador, "1", SetArgs.Builder.nx());
+        redis.incrby("sum:" + epochSecond, cents);
+        redis.incrby("count:" + epochSecond, 1);
+        redis.flushCommands(); // envia em batch
     }
 
-    @Transactional //TODO ENTENDER OQ É ESSE CARA
-    public void registrar(UUID id, BigDecimal valor) {
-        if (repo.existsById(id)) return;
-        Divida divida = new Divida();
+    public Map<String, Object> consultar(Instant from, Instant to) throws Exception {
+        String[] sumKeys = buildKeys("sum:", from, to);
+        String[] countKeys = buildKeys("count:", from, to);
 
-        divida.setId(id);
-        divida.setValor(valor);
-        repo.save(divida);
+        // Rodando em paralelo
+        var sumsFuture = redis.mget(sumKeys).toCompletableFuture();
+        var countsFuture = redis.mget(countKeys).toCompletableFuture();
+
+        CompletableFuture.allOf(sumsFuture, countsFuture).join();
+
+        List<KeyValue<String, String>> sums = sumsFuture.get();
+        List<KeyValue<String, String>> counts = countsFuture.get();
+
+        long totalCents = 0L;
+        long totalCount = 0L;
+
+        for (KeyValue<String, String> kv : sums) {
+            if (kv.hasValue()) totalCents += Long.parseLong(kv.getValue());
+        }
+        for (KeyValue<String, String> kv : counts) {
+            if (kv.hasValue()) totalCount += Long.parseLong(kv.getValue());
+        }
+
+        // Usando HashMap (menos overhead que Map.of)
+        Map<String, Object> result = new HashMap<>(2);
+        result.put("quantidadeTotal", totalCount);
+        result.put("valorTotal", BigDecimal.valueOf(totalCents, 2));
+        return result;
     }
 
-    @Transactional(readOnly = true) //TODO ENTENDER OQ É ESSE CARA
-    public Resumo resumo(Instant from, Instant to) {
-        Object[] result = repo.getResumo(from, to);
-        return new Resumo(((Number) result[0]).intValue(), (BigDecimal) result[1]);
+    private String[] buildKeys(String prefix, Instant from, Instant to) {
+        long start = from.getEpochSecond();
+        long end = to.getEpochSecond();
+        int len = (int) (end - start);
+        String[] keys = new String[len];
+        for (int i = 0; i < len; i++) {
+            keys[i] = prefix + (start + i);
+        }
+        return keys;
     }
-
-    public record Resumo(int quantidadeTotal, BigDecimal valorTotal) {}
 }
