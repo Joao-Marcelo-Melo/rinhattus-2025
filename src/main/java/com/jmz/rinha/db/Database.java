@@ -2,6 +2,8 @@ package com.jmz.rinha.db;
 
 import com.jmz.rinha.model.Divida;
 import com.jmz.rinha.model.ResultadoConsulta;
+import jakarta.annotation.PostConstruct;
+import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.UUID;
@@ -9,6 +11,7 @@ import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.DoubleAdder;
 import java.util.concurrent.atomic.LongAdder;
 
+@Component
 public class Database {
 
     private final ConcurrentHashMap<UUID, Divida> dividas = new ConcurrentHashMap<>();
@@ -33,6 +36,18 @@ public class Database {
         }
         return false;
     }
+//
+//    public boolean salvar(Divida divida) {
+//        Divida anterior = dividas.putIfAbsent(divida.getIdentificador(), divida);
+//        if (anterior == null) {
+//            synchronized (this) {
+//                quantidadeTotal.increment();
+//                valorTotal.add(divida.getValor());
+//            }
+//            return true;
+//        }
+//        return false;
+//    }
 
     public ResultadoConsulta consultar(Instant from, Instant to) {
         LongAdder count = new LongAdder();
