@@ -12,20 +12,32 @@
 #
 # ENTRYPOINT ["./rinha"]
 
-FROM eclipse-temurin:21-jre-alpine
+FROM amazoncorretto:21-alpine3.19-jdk
 
 WORKDIR /app
 
 COPY target/rinha-0.0.1-SNAPSHOT.jar app.jar
 
-RUN apk add --no-cache libc6-compat
+RUN apk add --no-cache libc6-compat && \
+    echo 'net.core.somaxconn=65535' >> /etc/sysctl.conf && \
+    echo 'net.ipv4.tcp_tw_reuse=1' >> /etc/sysctl.conf
 
 EXPOSE 8080
 
 ENTRYPOINT ["java", \
-   "-Xms32m", "-Xmx64m", \
-   "-XX:+UseSerialGC", \
+   "-server", \
+   "-Xms64m", "-Xmx128m", \
+   "-XX:+UseG1GC", \
+   "-XX:MaxGCPauseMillis=5", \
+   "-XX:+UseStringDeduplication", \
    "-XX:+AlwaysPreTouch", \
    "-XX:+ExitOnOutOfMemoryError", \
+   "-XX:+UseCompressedOops", \
+   "-XX:+UseCompressedClassPointers", \
+   "-Djava.security.egd=file:/dev/./urandom", \
+   "-Djava.awt.headless=true", \
+   "-Dspring.backgroundpreinitializer.ignore=true", \
+   "-Dspring.output.ansi.enabled=never", \
+   "-Djava.net.preferIPv4Stack=true", \
+   "-Dfile.encoding=UTF-8", \
    "-jar", "app.jar"]
- 
