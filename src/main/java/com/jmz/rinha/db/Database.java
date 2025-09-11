@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.LongAdder;
 @Component
 public class Database {
 
-    private final ConcurrentHashMap<UUID, Divida> dividas = new ConcurrentHashMap<>(1 << 20);
+    private final ConcurrentHashMap<Long, Bucket> buckets = new ConcurrentHashMap<>();
 
     private final LongAdder quantidadeTotal = new LongAdder();
     private final DoubleAdder valorTotal = new DoubleAdder();
@@ -28,42 +28,44 @@ public class Database {
 
     public boolean salvar(Divida divida) {
         double valor = divida.getValor();
-        UUID id = divida.getIdentificador();
+        Instant criadoEm = divida.getCriadoEm();
 
-        Divida anterior = dividas.putIfAbsent(id, divida);
-        if (anterior == null) {
-            quantidadeTotal.increment();
-            valorTotal.add(valor);
-            return true;
-        }
-        return false;
+        long bucketKey = toBucketKey(criadoEm);
+        buckets.computeIfAbsent(bucketKey, k -> new Bucket()).add(valor);
+
+        quantidadeTotal.increment();
+        valorTotal.add(valor);
+        return true;
     }
 
     public ResultadoConsulta consultar(Instant from, Instant to) {
-        long count = 0L;
+        long startKey = toBucketKey(from);
+        long endKey = toBucketKey(to);
+
+        long count = 0;
         double total = 0.0;
 
-        for (Divida d : dividas.values()) {
-            Instant criadoEm = d.getCriadoEm();
-            if (!criadoEm.isBefore(from) && criadoEm.isBefore(to)) {
-                count++;
-                total += d.getValor();
+        for (long key = startKey; key <= endKey; key++) {
+            Bucket bucket = buckets.get(key);
+            if (bucket != null) {
+                count += bucket.quantidade.sum();
+                total += bucket.valor.sum();
             }
         }
         return new ResultadoConsulta(count, total);
     }
 
-
     public ResultadoConsulta resumoGeral() {
-        return new ResultadoConsulta(
-                quantidadeTotal.sum(),
-                valorTotal.sum()
-        );
+        return new ResultadoConsulta(quantidadeTotal.sum(), valorTotal.sum());
     }
 
     public void limparDatabase() {
-        dividas.clear();
+        buckets.clear();
         quantidadeTotal.reset();
         valorTotal.reset();
+    }
+
+    private long toBucketKey(Instant instant) {
+        return instant.getEpochSecond();
     }
 }

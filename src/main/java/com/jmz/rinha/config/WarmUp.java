@@ -11,13 +11,12 @@ import java.util.UUID;
 @Configuration
 public class WarmUp {
 
-    private static final int WARMUP_ENTRIES = 5000;
-    private static final int WARMUP_ITERATIONS = 1000;
+    private static final int WARMUP_ENTRIES = 2000;
+    private static final int WARMUP_ITERATIONS = 2000;
 
     @Bean
     ApplicationRunner aggressiveWarmup(DividaService service) {
         return args -> {
-            System.out.println("🔥 Iniciando warmup AGRESSIVO...");
             long start = System.currentTimeMillis();
             warmupParsing();
             warmupService(service);
@@ -27,8 +26,6 @@ public class WarmUp {
             Thread.sleep(100);
             System.gc();
             service.limparBase();
-            long duration = System.currentTimeMillis() - start;
-            System.out.println("✅ Warmup concluído em " + duration + "ms");
         };
     }
 

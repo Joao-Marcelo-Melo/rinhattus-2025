@@ -11,9 +11,6 @@ services:
         limits:
           cpus: "0.65"
           memory: "165MB"
-    environment:
-      - JAVA_OPTS=-server -XX:+UseG1GC -XX:MaxGCPauseMillis=1 -XX:+TieredCompilation -XX:TieredStopAtLevel=4 -XX:CompileThreshold=100
-      - MALLOC_ARENA_MAX=2
     networks:
       - rinhattus-net
     sysctls:

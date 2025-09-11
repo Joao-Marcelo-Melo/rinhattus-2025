@@ -26,27 +26,19 @@ EXPOSE 8080
 
 ENTRYPOINT ["java", \
    "-server", \
-   "-Xms128m", "-Xmx128m", \
+   "-Xms72m", "-Xmx72m", \
+   "-Xss256k", \
    "-XX:+UseG1GC", \
    "-XX:MaxGCPauseMillis=1", \
-   "-XX:G1HeapRegionSize=8m", \
-   "-XX:+G1UseAdaptiveIHOP", \
-   "-XX:G1MixedGCCountTarget=8", \
-   "-XX:+TieredCompilation", \
-   "-XX:TieredStopAtLevel=1", \
-   "-XX:CompileThreshold=1", \
    "-XX:+AlwaysPreTouch", \
    "-XX:+UseStringDeduplication", \
    "-XX:+ExitOnOutOfMemoryError", \
    "-XX:+UseCompressedOops", \
    "-XX:+UseCompressedClassPointers", \
    "-XX:+DisableExplicitGC", \
-   "-XX:MaxInlineLevel=15", \
-   "-XX:MaxTrivialSize=12", \
-   "-XX:InlineSmallCode=2000", \
-   "-XX:MaxInlineSize=70", \
-   "-XX:FreqInlineSize=325", \
-   "-XX:+UnlockDiagnosticVMOptions", \
+   "-XX:+TieredCompilation", \
+   "-XX:TieredStopAtLevel=1", \
+   "-XX:CompileThreshold=1", \
    "-Djava.security.egd=file:/dev/./urandom", \
    "-Djava.awt.headless=true", \
    "-Dspring.backgroundpreinitializer.ignore=true", \
