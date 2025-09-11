@@ -9,14 +9,15 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "1.0"
-          memory: "200MB"
+          cpus: "0.65"
+          memory: "165MB"
     environment:
-      - JAVA_OPTS=-server -XX:+UseG1GC -XX:MaxGCPauseMillis=1
+      - JAVA_OPTS=-server -XX:+UseG1GC -XX:MaxGCPauseMillis=1 -XX:+TieredCompilation -XX:TieredStopAtLevel=4 -XX:CompileThreshold=100
+      - MALLOC_ARENA_MAX=2
     networks:
       - rinhattus-net
     sysctls:
-      - net.core.somaxconn=1024
+      - net.core.somaxconn=4096
       - net.ipv4.tcp_tw_reuse=1
     ulimits:
       nofile:
@@ -30,10 +31,11 @@ services:
     deploy:
       resources:
         limits:
-          cpus: "0.3"
-          memory: "120MB"
+          cpus: "0.65"
+          memory: "165MB"
     environment:
-      - JAVA_OPTS=-server -XX:+UseG1GC -XX:MaxGCPauseMillis=1
+      - JAVA_OPTS=-server -XX:+UseG1GC -XX:MaxGCPauseMillis=1 -XX:+TieredCompilation -XX:TieredStopAtLevel=4 -XX:CompileThreshold=100
+      - MALLOC_ARENA_MAX=2
     networks:
       - rinhattus-net
     sysctls:
@@ -58,7 +60,7 @@ services:
       resources:
         limits:
           cpus: "0.2"
-          memory: "32MB"
+          memory: "20MB"
     networks:
       - rinhattus-net
     sysctls:

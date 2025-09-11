@@ -37,8 +37,14 @@ public class DividaController {
     }
 
     @GetMapping
-    public ResponseEntity<ConsultaResponse> consultar(@RequestParam("from") String from, @RequestParam("to") String to) {
+    public ResponseEntity<ConsultaResponse> consultar(
+            @RequestParam(value = "from", required = false) String from,
+            @RequestParam(value = "to", required = false) String to
+    ) {
         try {
+            if (from == null || to == null) {
+                return ResponseEntity.ok(new ConsultaResponse(0, 0.0));
+            }
             Instant iFrom = Instant.parse(from);
             Instant iTo = Instant.parse(to);
             ResultadoConsulta resultado = service.consultar(iFrom, iTo);
