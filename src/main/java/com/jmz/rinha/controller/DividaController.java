@@ -36,7 +36,7 @@ public class DividaController {
             if (identificador == null || valor <= 0) {
                 return ERROR_ENTITY;
             }
-            service.registrarDivida(identificador, valor);
+            service.registrarDivida(valor);
             return SUCCESS_ENTITY;
         } catch (Exception e) {
             return ERROR_ENTITY;

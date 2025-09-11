@@ -10,11 +10,10 @@ import java.util.UUID;
 @Service
 public class DividaService {
 
-    private final OffHeapDatabase database = new OffHeapDatabase(86_400); // 1 dia de segundos
+    private final OffHeapDatabase database = new OffHeapDatabase(86_400);
 
-    public boolean registrarDivida(UUID identificador, double valor) {
+    public void registrarDivida(double valor) {
         database.salvar(valor, Instant.now());
-        return true; // não falha no modelo atual
     }
 
     public ResultadoConsulta consultar(Instant from, Instant to) {
