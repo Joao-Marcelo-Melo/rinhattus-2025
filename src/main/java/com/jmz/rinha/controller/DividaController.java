@@ -16,12 +16,13 @@ import java.util.UUID;
 public class DividaController {
 
     private final DividaService service;
-    private static final DividaResponse SUCCESS_RESPONSE = new DividaResponse(200, "Dívida registrada com sucesso");
-    private static final DividaResponse ERROR_RESPONSE = new DividaResponse(500, "Não foi possível realizar o recebimento da dívida");
-    private static final ResponseEntity<DividaResponse> SUCCESS_ENTITY = ResponseEntity.ok(SUCCESS_RESPONSE);
-    private static final ResponseEntity<DividaResponse> ERROR_ENTITY = ResponseEntity.status(500).body(ERROR_RESPONSE);
-    private static final ConsultaResponse ZERO_RESPONSE = new ConsultaResponse(0, 0.0);
-    private static final ResponseEntity<ConsultaResponse> ZERO_RESPONSE_ENTITY = ResponseEntity.ok(ZERO_RESPONSE);
+
+    private static final ResponseEntity<DividaResponse> SUCCESS_ENTITY =
+            ResponseEntity.ok(new DividaResponse(200, "Dívida registrada com sucesso"));
+    private static final ResponseEntity<DividaResponse> ERROR_ENTITY =
+            ResponseEntity.status(500).body(new DividaResponse(500, "Não foi possível realizar o recebimento da dívida"));
+    private static final ResponseEntity<ConsultaResponse> ZERO_RESPONSE_ENTITY =
+            ResponseEntity.ok(new ConsultaResponse(0, 0.0));
 
     public DividaController(DividaService service) {
         this.service = service;
@@ -35,8 +36,8 @@ public class DividaController {
             if (identificador == null || valor <= 0) {
                 return ERROR_ENTITY;
             }
-            boolean success = service.registrarDivida(identificador, valor);
-            return success ? SUCCESS_ENTITY : ERROR_ENTITY;
+            service.registrarDivida(identificador, valor);
+            return SUCCESS_ENTITY;
         } catch (Exception e) {
             return ERROR_ENTITY;
         }
@@ -48,7 +49,11 @@ public class DividaController {
             @RequestParam(value = "to", required = false) Instant to
     ) {
         if (from == null || to == null) return ZERO_RESPONSE_ENTITY;
+
         ResultadoConsulta resultado = service.consultar(from, to);
-        return ResponseEntity.ok(new ConsultaResponse(resultado.quantidadeTotal(), resultado.valorTotal()));
+        return ResponseEntity.ok(new ConsultaResponse(
+                resultado.quantidadeTotal(),
+                resultado.valorTotal()
+        ));
     }
 }
