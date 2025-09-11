@@ -33,10 +33,10 @@ ENTRYPOINT ["java", \
    "-XX:+G1UseAdaptiveIHOP", \
    "-XX:G1MixedGCCountTarget=8", \
    "-XX:+TieredCompilation", \
-   "-XX:TieredStopAtLevel=4", \
-   "-XX:CompileThreshold=100", \
-   "-XX:+UseStringDeduplication", \
+   "-XX:TieredStopAtLevel=1", \
+   "-XX:CompileThreshold=1", \
    "-XX:+AlwaysPreTouch", \
+   "-XX:+UseStringDeduplication", \
    "-XX:+ExitOnOutOfMemoryError", \
    "-XX:+UseCompressedOops", \
    "-XX:+UseCompressedClassPointers", \
@@ -46,6 +46,7 @@ ENTRYPOINT ["java", \
    "-XX:InlineSmallCode=2000", \
    "-XX:MaxInlineSize=70", \
    "-XX:FreqInlineSize=325", \
+   "-XX:+UnlockDiagnosticVMOptions", \
    "-Djava.security.egd=file:/dev/./urandom", \
    "-Djava.awt.headless=true", \
    "-Dspring.backgroundpreinitializer.ignore=true", \

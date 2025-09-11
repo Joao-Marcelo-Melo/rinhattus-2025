@@ -11,7 +11,7 @@ import java.util.UUID;
 @Configuration
 public class WarmUp {
 
-    private static final int WARMUP_ENTRIES = 50000;
+    private static final int WARMUP_ENTRIES = 5000;
     private static final int WARMUP_ITERATIONS = 1000;
 
     @Bean
@@ -26,6 +26,7 @@ public class WarmUp {
             System.gc();
             Thread.sleep(100);
             System.gc();
+            service.limparBase();
             long duration = System.currentTimeMillis() - start;
             System.out.println("✅ Warmup concluído em " + duration + "ms");
         };

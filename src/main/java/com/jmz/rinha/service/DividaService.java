@@ -21,4 +21,8 @@ public class DividaService {
     public ResultadoConsulta consultar(Instant from, Instant to) {
         return database.consultar(from, to);
     }
+
+    public void limparBase() {
+        database.limparDatabase();
+    }
 }

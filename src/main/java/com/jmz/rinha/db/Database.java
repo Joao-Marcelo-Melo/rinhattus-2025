@@ -13,7 +13,7 @@ import java.util.concurrent.atomic.LongAdder;
 @Component
 public class Database {
 
-    private final ConcurrentHashMap<UUID, Divida> dividas = new ConcurrentHashMap<>();
+    private final ConcurrentHashMap<UUID, Divida> dividas = new ConcurrentHashMap<>(1 << 20);
 
     private final LongAdder quantidadeTotal = new LongAdder();
     private final DoubleAdder valorTotal = new DoubleAdder();
@@ -27,33 +27,43 @@ public class Database {
     }
 
     public boolean salvar(Divida divida) {
-        Divida anterior = dividas.putIfAbsent(divida.getIdentificador(), divida);
+        double valor = divida.getValor();
+        UUID id = divida.getIdentificador();
+
+        Divida anterior = dividas.putIfAbsent(id, divida);
         if (anterior == null) {
             quantidadeTotal.increment();
-            valorTotal.add(divida.getValor());
+            valorTotal.add(valor);
             return true;
         }
         return false;
     }
 
     public ResultadoConsulta consultar(Instant from, Instant to) {
-        LongAdder count = new LongAdder();
-        DoubleAdder total = new DoubleAdder();
+        long count = 0L;
+        double total = 0.0;
 
-        dividas.values().forEach(d -> {
-            if (!d.getCriadoEm().isBefore(from) && d.getCriadoEm().isBefore(to)) {
-                count.increment();
-                total.add(d.getValor());
+        for (Divida d : dividas.values()) {
+            Instant criadoEm = d.getCriadoEm();
+            if (!criadoEm.isBefore(from) && criadoEm.isBefore(to)) {
+                count++;
+                total += d.getValor();
             }
-        });
-
-        return new ResultadoConsulta(count.sum(), total.sum());
+        }
+        return new ResultadoConsulta(count, total);
     }
+
 
     public ResultadoConsulta resumoGeral() {
         return new ResultadoConsulta(
                 quantidadeTotal.sum(),
                 valorTotal.sum()
         );
+    }
+
+    public void limparDatabase() {
+        dividas.clear();
+        quantidadeTotal.reset();
+        valorTotal.reset();
     }
 }
