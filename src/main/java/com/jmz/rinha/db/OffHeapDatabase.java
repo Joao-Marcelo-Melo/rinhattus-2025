@@ -47,7 +47,7 @@ public class OffHeapDatabase {
         final long start = from.getEpochSecond();
         final long end   = to.getEpochSecond();
 
-        for (long s = start; s <= end; s++) {
+        for (long s = start; s < end; s++) {
             final int idx    = (int) (s % bucketRange) * BUCKET_SIZE;
             final int valIdx = idx + Long.BYTES;
 

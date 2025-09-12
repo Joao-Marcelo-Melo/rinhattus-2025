@@ -42,10 +42,10 @@ fi
 # Down, build, up
 # =========================
 log "Derrubando containers (compose: $COMPOSE_FILE)..."
-sudo docker compose --compatibility -f "$COMPOSE_FILE" down -v --remove-orphans || true
+#sudo docker compose --compatibility -f "$COMPOSE_FILE" down -v --remove-orphans || true
 
 log "Build Maven (package)..."
-./mvnw clean package -DskipTests
+#./mvnw clean package -DskipTests
 
 log "Subindo containers com build..."
 sudo docker compose --compatibility -f "$COMPOSE_FILE" up -d --build

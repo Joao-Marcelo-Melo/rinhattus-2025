@@ -22,19 +22,10 @@
     </properties>
 
     <dependencies>
-        <!-- Spring WebFlux - Netty only -->
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter-webflux</artifactId>
+            <artifactId>spring-boot-starter-web</artifactId>
         </dependency>
-
-        <dependency>
-            <groupId>io.netty</groupId>
-            <artifactId>netty-transport-native-epoll</artifactId>
-            <classifier>linux-x86_64</classifier>
-            <scope>runtime</scope>
-        </dependency>
-
         <dependency>
             <groupId>org.agrona</groupId>
             <artifactId>agrona</artifactId>
@@ -44,17 +35,13 @@
 
     <build>
         <plugins>
-            <!-- Plugin do Spring Boot -->
             <plugin>
                 <groupId>org.springframework.boot</groupId>
                 <artifactId>spring-boot-maven-plugin</artifactId>
                 <configuration>
-                    <!-- Reduz tamanho final da imagem -->
                     <layers enabled="false"/>
                 </configuration>
             </plugin>
-
-            <!-- Plugin para build nativo com GraalVM -->
             <plugin>
                 <groupId>org.graalvm.buildtools</groupId>
                 <artifactId>native-maven-plugin</artifactId>

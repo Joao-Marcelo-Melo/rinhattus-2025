@@ -1,12 +1,9 @@
 server:
   port: 8080
   shutdown: immediate
-  netty:
-    connection-timeout: 1000ms
-    idle-timeout: 5s
-  max-http-header-size: 8KB
   compression:
     enabled: false
+  max-http-header-size: 8KB
 
 spring:
   application:
@@ -15,7 +12,6 @@ spring:
   main:
     banner-mode: "off"
     lazy-initialization: false
-    web-application-type: reactive
     register-shutdown-hook: false
     allow-bean-definition-overriding: true
 
@@ -41,35 +37,6 @@ spring:
     generator:
       WRITE_NUMBERS_AS_STRINGS: false
 
-reactor:
-  netty:
-    pool:
-      max-connections: 2000
-      pending-acquire-max-count: 4000
-      leasing-strategy: lifo
-      max-idle-time: 10s
-      acquire-timeout: 2s
-      max-life-time: 60s
-    worker-count: 4
-    shutdown-quiet-period: 0
-    shutdown-timeout: 0
-    ioWorkerCount: 2
-    ioSelectCount: 1
-
-#logging:
-#  level:
-#    root: ERROR
-#    org.springframework: ERROR
-#    reactor.netty: ERROR
-#    io.netty: ERROR
-#    org.apache.catalina: ERROR
-#    org.hibernate: ERROR
-#    org.springframework.web: ERROR
-
 management:
   endpoints:
     enabled-by-default: false
-spring.webflux:
-  max-in-memory-size: 1MB
-  static-path-pattern: /static/**
-spring.reactor.debug-agent.enabled: false
