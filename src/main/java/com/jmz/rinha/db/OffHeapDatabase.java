@@ -18,8 +18,8 @@ public class OffHeapDatabase {
         this.buffer = new UnsafeBuffer(direct);
     }
 
-    public void salvar(double valor, Instant criadoEm) {
-        final int idx = toIndex(criadoEm);
+    public void salvar(double valor, long epochSec) {
+        final int idx = toIndex(epochSec);
         final int valIdx = idx + Long.BYTES;
 
         while (true) {
@@ -66,8 +66,8 @@ public class OffHeapDatabase {
         buffer.setMemory(0, buffer.capacity(), (byte) 0);
     }
 
-    private int toIndex(Instant instant) {
-        final long second = instant.getEpochSecond() % bucketRange;
+    private int toIndex(long epochSec) {
+        final long second = epochSec % bucketRange;
         return (int) second * BUCKET_SIZE;
     }
 }

@@ -12,7 +12,8 @@ public class DividaService {
     private final OffHeapDatabase database = new OffHeapDatabase(86_400);
 
     public void registrarDivida(double valor) {
-        database.salvar(valor, Instant.now());
+        long epochSec = System.currentTimeMillis() / 1000;
+        database.salvar(valor, epochSec);
     }
 
     public ResultadoConsulta consultar(Instant from, Instant to) {
