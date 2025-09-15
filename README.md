@@ -15,6 +15,7 @@ Eu fui o **grande campeão da competição**, alcançando o melhor desempenho ge
 - 🧩 **Arquitetura minimalista**: apenas o essencial para máxima eficiência
 - 🔧 **Execução simplificada** com [`run.sh`](./run.sh)
 - 🛡️ **Zero erros** durante toda a competição
+- 🦾 **Compilação nativa com GraalVM**: binário otimizado, inicialização instantânea e menor consumo de memória
 
 ---
 
@@ -76,7 +77,7 @@ O script `run.sh` já contém todos os passos para buildar e executar a aplicaç
 Caso prefira, é possível compilar e subir os containers manualmente:
 
 ```bash
-./mvnw clean package -DskipTests
+./mvnw -Pnative native:compile -DskipTests
 docker compose up --build
 ```
 
