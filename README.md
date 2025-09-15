@@ -98,7 +98,7 @@ http://localhost:8080/dividas
 ## 🌌 Créditos
 
 - Autor: **João Marcelo de Melo Bomfim**
-- Competição: [Rinha de Backend 2025](https://github.com/zanfranceschi/rinha-de-backend)
+- Competição: rinhattus - 2025
 - Resultado: **🥇 Campeão da edição**
 
 ---
