@@ -57,7 +57,7 @@ Minha implementação ficou em **1º lugar no ranking oficial**, com os seguinte
 
 ## 📖 Especificações da Rinha
 
-As regras e instruções oficiais estão documentadas em [`instruções.md`](./instruções.md), arquivo disponibilizado pela organização da competição.
+As regras e instruções oficiais estão documentadas em [`instruções.md`](./INSTRUÇÕES-RINHA.md), arquivo disponibilizado pela organização da competição.
 
 ---
 
