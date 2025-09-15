@@ -1,0 +1,24 @@
+{
+  "participante": "João Marcelo de Melo Bomfim",
+  "total_bruto": "1758188.05",
+  "total_liquido": "2268062.58",
+  "p99": {
+    "valor": "1.38ms",
+    "bonus": "29%"
+  },
+  "multas": {
+    "valorReal": "0.00",
+    "errosInesperados": {
+      "quantidade": 0,
+      "multa": "0%"
+    },
+    "errosControlados": {
+      "quantidade": 0,
+      "multa": "0%"
+    }
+  },
+  "desempate": {
+    "p95": "1.05ms",
+    "totalErros": 0
+  }
+}
